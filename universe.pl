@@ -34,25 +34,17 @@ accion_vigilancia(control).
 tipo_caso_covid(importado).
 tipo_caso_covid(autoctono).
 
-enfermedad(respiratoria,aguda).
-enfermedad(respiratoria,leve).
-enfermedad(respiratoria,grave).
+presenta_enfermedad(enfermedad_respiratoria,[aguda,leve,grave]).
 
 pais_transmision(viaje_estancia,[china,hong_kong,corea_del_sur,japon,italia,iran,singapur]).
-% pais_transmision(viaje_estancia_hong_kong).
-% pais_transmision(viaje_estancia_corea_del_sur).
-% pais_transmision(viaje_estancia_japon).
-% pais_transmision(viaje_estancia_italia).
-% pais_transmision(viaje_estancia_iran).
-% pais_transmision(viaje_estancia_singapur).
 
-contacto(caso_confirmado_covid,[importado,autoctono]).
-contacto(caso_bajo_investigacion_covid,[importado,autoctono]).
+contacto(caso,[confirmado,bajo_investigacion],[importado,autoctono]).
+% contacto(caso_bajo_investigacion_covid,[importado,autoctono]).
 
 objetivo_vigilancia_covid(prevenir_propagacion).
 
-caso_sospechoso(X,Y,Z,W):-
-    contacto(X,Y); pais_transmision(Z,W).
+caso_sospechoso(E1,E2,C1,C2,C3,P1,P2):-
+    presenta_enfermedad(E1,E2),contacto(C1,C2,C3);pais_transmision(P1,P2).
 
 %definicion_operacional
 %--------------------------------Page 11---------------------------------
