@@ -15,6 +15,7 @@ pais_transmision_covid(viaje_estancia,[china,hong_kong,corea_del_sur,japon,itali
 %What are the sintoms of covid
 enfermedad_covid(enfermedad,respiratoria,[aguda,leve,grave]).
 sintomas_covid(sintoma,respiratorio).
+sintomas_covid(sintoma,ninguno).
 
 contacto_covid(caso_covid,[confirmado,bajo_investigacion],[importado,autoctono]).
 
@@ -30,11 +31,12 @@ atencion_medica(primer_nivel).
 %Coordination jurisdiccion sanitaria
 estudio_epidemiologico(llenado_del_estudio).
 institucion_epidemiologica(toma_de_muestra).
-%estudio_epidemiologico(toma_de_muestra).
-usar(mascarilla_quirurgica_desechable).
+
+usar(mascarilla_quirurgica_desechable,tolera).
+usar(papel_higienico,no_tolera).
 
 cubrise(boca).
-cubrirse(nariz).
+cubrise(nariz).
 
 accion(tocer).
 accion(estornudar).
@@ -59,11 +61,22 @@ vigilancia_epidemiologica(X) :-
 interrogatorio_atencion_covid(X) :-
     unidad_salud(C1,C2,C3,C4),personal_medico(M1,de_primer_contacto),caso_sospechoso(_,_,_,_,_,_,_,_).
 
-% 2 Step for medias_preventivas
-jurisdiccion_sanitaria(X,Y,Z) :-
+proveer_mascarilla_quirurjica(X):-
+    sintomas_covid(sintoma,respiratorio),
+    usar(X,tolera).
+
+higiene_respiratoria(X,Y) :-
+    sintomas_covid(sintoma,respiratorio),
+    usar(X,no_tolera),
+    accion(Y).
+
+% 2 Step for medias_preventivas for breath synthoms
+jurisdiccion_sanitaria_sintomas(X,Y,Z,T1,T2,T3) :-
     atencion_medica(X),
     estudio_epidemiologico(Y),
-    institucion_epidemiologica(Z).
+    institucion_epidemiologica(Z),
+    sintomas_covid(sintoma,respiratorio),
+    proveer_mascarilla_quirurjica(T1);higiene_respiratoria(T2,T3).
 
 %definicion_operacional
 %--------------------------------Page 11---------------------------------
