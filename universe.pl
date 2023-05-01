@@ -42,9 +42,9 @@ usar(guantes,tarjeta_roja).
 usar(mascarilla_proteccion_facial,tarjeta_roja).
 usar(bata_impermeable,tarjeta_roja).
 usar(contenedor_rigido,tarjeta_roja).
-usar(agua,tarjeta_roja).
-usar(jabon,tarjeta_roja).
-usar(alcohol_gel_70_porciento,tarjeta_roja).
+usar(agua,jabon,lavado,tarjeta_roja).
+% usar(jabon,lavado,tarjeta_roja).
+usar(alcohol_gel_70_porciento,higiene,tarjeta_roja).
 
 %Tarjeta Verde
 usar(alcohol_etilico_70_porciento,tarjeta_verde).
@@ -64,7 +64,7 @@ medidas_gotas(transportar_paciente).
 medidas_gotas(notificar_area).
 
 %Cuadro 2 Tarjeta Color Azul
-medias_aerosoles()
+medias_aerosoles(procedimiento,[aspiraciones,intubaciones,broncoscopias,reanimacion_cardiopulmonar]).
 
 cubrise(boca).
 cubrise(nariz).
@@ -73,6 +73,14 @@ accion(tocer).
 accion(estornudar).
 accion(limpiar,tarjeta_verde).
 accion(desinfectar,tarjeta_verde).
+accion(lavado,manos,tarjeta_roja).
+accion(higiene,manos,tarjeta_roja).
+
+contacto(sangre).
+contacto(secreciones).
+contacto(articulo_contaminado).
+contacto(membranas_mucosas).
+contacto(heridas_piel).
 
 %//////////////////////////////////////////////////////Rules
 
@@ -86,9 +94,6 @@ vigilancia_epidemiologica(X) :-
     %Definicion operacional
     write('caso sospechozo o caso confirmado'),
     caso_sospechoso(_,_,_,_,_,_,_,_);caso_confirmado(_,_,_,_,_,_,_,_,_,_),objetivo_vigilancia_covid(X).
-
-%TODO with rules above
-% medidas_preventivas()
 
 % 1 Step for medias_preventivas
 interrogatorio_atencion_covid(X) :-
@@ -108,6 +113,7 @@ jurisdiccion_sanitaria(X,Y,Z,W) :-
     atencion_medica(X),
     estudio_epidemiologico(Y),
     institucion_epidemiologica(Z),
+    sintomas_covid(sintoma,ninguno),
     personal_medico(W,coordinacion_jurisdiccion_sanitaria).
 
 % 3 Step for medias_preventivas for breath synthoms
@@ -117,6 +123,26 @@ jurisdiccion_sanitaria_sintomas(X,Y,Z,T1,T2,T3) :-
     institucion_epidemiologica(Z),
     sintomas_covid(sintoma,respiratorio),
     proveer_mascarilla_quirurjica(T1);higiene_respiratoria(T2,T3).
+
+%TODO with rules below
+higiene_manos(X,Y,W,Z) :-
+    write('lavado manos agua y jabon'),
+    (accion(X,Y,tarjeta_roja),usar(Z,W,X,tarjeta_roja),X \== higiene);
+    write('o higiene manos y alcohol'),
+    (accion(X,Y,tarjeta_roja),usar(Z,X,tarjeta_roja),X == higiene).
+
+uso_guantes(X) :-
+    higiene_manos(_,_,_,_),
+    write('con contacto:')
+    contacto(X).
+
+% 4 Step for gota y contacto
+personal_primer_contacto(X) :-
+    unidad_medica(publica),unidad_medica(privada),
+    caso_sospechoso(_,_,_,_,_,_,_,_).
+
+%TODO with rules above
+% medidas_preventivas()
 
 %definicion_operacional
 %--------------------------------Page 11---------------------------------
