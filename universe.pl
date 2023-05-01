@@ -26,6 +26,8 @@ personal_medico(medico,de_primer_contacto).
 personal_medico(personal_epidemiologia,coordinacion_jurisdiccion_sanitaria).
 
 unidad_salud(cubiculo,aislado,ventilado,puerta_cerrada).
+unidad_salud_casa(casa,aislado,ventilado,puerta_cerrada).
+
 unidad_medica(publica).
 unidad_medica(privada).
 atencion_medica(primer_nivel).
@@ -47,18 +49,10 @@ usar_respirador(respirador_N95,tarjeta_azul).
 usar_contenedor(contenedor_rigido,desecho,contaminacion,tarjeta_roja).
 
 %Cuadro 2 Tarjeta Color Verde
-% medidas_gotas(distancia,metro_1).
-% medidas_gotas(puerta_cerrada,atencion).
-% medidas_gotas(visitante,reportarse,enfermeras).
-% medidas_gotas(equipo_medico,desechable).
-% medidas_gotas(equipo_medico,personalizado).
-% medidas_gotas(compartir_equipo_medico,limpiar,desinfectar).
-% medidas_gotas(habitacion_individual).
-% medidas_gotas(transportar_paciente).
-% medidas_gotas(notificar_area).
+aislamiento_habitacion(individual,disponible).
+aislamiento_transportar(paciente,proposito_indispensable,usar_mascarilla_tolera(mascarilla_quirurgica_desechable,tolera)).
+aislamiento_notificar(area,precauciones).
 
-%Cuadro 2 Tarjeta Color Azul
-medidas_aerosoles(procedimiento,[aspiraciones,intubaciones,broncoscopias,reanimacion_cardiopulmonar]).
 
 cubrise(boca).
 cubrise(nariz).
@@ -86,6 +80,9 @@ contaminacion_de(contaminacion,ropa).
 desechos_de(agujas).
 desechos_de(material_punzocortante).
 
+%Cuadro 2 Tarjeta Color Azul
+aerosoles(procedimiento,[aspiraciones,intubaciones,broncoscopias,reanimacion_cardiopulmonar]).
+
 %//////////////////////////////////////////////////////Rules
 
 caso_sospechoso(E1,E2,E3,C1,C2,C3,P1,P2):-
@@ -100,8 +97,8 @@ vigilancia_epidemiologica(X) :-
     caso_sospechoso(_,_,_,_,_,_,_,_);caso_confirmado(_,_,_,_,_,_,_,_,_,_),objetivo_vigilancia_covid(X).
 
 % 1 Step for medias_preventivas
-interrogatorio_atencion_covid(M1) :-
-    unidad_salud(_,_,_,_),personal_medico(M1,de_primer_contacto),caso_sospechoso(_,_,_,_,_,_,_,_).
+interrogatorio_atencion_covid(C1,C2,C3,C4) :-
+    unidad_salud(C1,C2,C3,C4),personal_medico(_,de_primer_contacto),caso_sospechoso(_,_,_,_,_,_,_,_).
 
 proveer_mascarilla_quirurjica(X):-
     sintomas_covid(sintoma,respiratorio),
@@ -164,13 +161,37 @@ contenedor(X,Y,Z) :-
     usar_contenedor(Y,Z,_,_),
     desechos_de(X).
 
+
+precauciones_aerosol(X,K,Y) :-
+    (usar_respirador(X,_),
+    aerosoles(K,Y));
+    (write('caso confirmado'),usar_respirador(X,_),
+    aerosoles(K,Y),caso_confirmado(_,_,_,_,_,_,_,_,_,_)).
+
+% precauciones_estandar(Y) :-
+%     higiene_manos(_,_,_,_),
+%     guantes(_,Y).
+
 % 4 Step for gota y contacto
 personal_primer_contacto() :-
     unidad_medica(publica),unidad_medica(privada),
     caso_sospechoso(_,_,_,_,_,_,_,_).
+
 
 %TODO with rules above
 % medidas_preventivas()
 
 %definicion_operacional
 %--------------------------------Page 11---------------------------------
+
+movimiento_personas(separacion,movimiento).
+movimiento_personas(restriccion,movimiento).
+
+%Rules for table 2
+aislamiento(X,W,K) :-
+    (write('separacion'),movimiento_personas(X,_),X == separacion,enfermedad_covid(W,K,_));
+    (write('restriccion'),movimiento_personas(X,_),X == restriccion,enfermedad_covid(W,K,_)).
+
+caso_aislamiento(X,W,K,C) :-
+    (write('separacion'),movimiento_personas(X,_),X == separacion,enfermedad_covid(W,K,_),unidad_salud_casa(C,_,_,_));
+    (write('restriccion'),movimiento_personas(X,_),X == restriccion,enfermedad_covid(W,K,_),unidad_salud_casa(C,_,_,_)).
