@@ -95,6 +95,11 @@ numero_pacientes(multiples).
 
 garantizar(insumos).
 
+notificacion(formato_suive-1).
+
+movimiento_personas(separacion,movimiento).
+movimiento_personas(restriccion,movimiento).
+
 %Cuadro 2 Tarjeta Color Azul
 aerosoles(procedimiento,[aspiraciones,intubaciones,broncoscopias,reanimacion_cardiopulmonar]).
 
@@ -195,15 +200,6 @@ caso_detectado(X,Y,Z) :-
     personal_medico(Y,Z),Z == coordinacion_jurisdiccion_sanitaria.
 
 
-%TODO with rules above
-% medidas_preventivas()
-
-%definicion_operacional
-%--------------------------------Page 11---------------------------------
-
-movimiento_personas(separacion,movimiento).
-movimiento_personas(restriccion,movimiento).
-
 %Rules for table 2
 aislamiento(X,W,K) :-
     (write('separacion'),movimiento_personas(X,_),X == separacion,enfermedad_covid(W,K,_));
@@ -236,8 +232,8 @@ multiples_pacientes_aislados(W,K,C,R,T,F) :-
 caso_identificado(X,Y,Z) :-
     institucion_epidemiologica(Z), personal_medico(X,Y).
 
-%Step 9
-caso_corroborado_sospechoso(X) :-
+%Step 9 and 10
+caso_corroborado_sospechoso(X,Y) :-
     caso_sospechoso(_,_,_,_,_,_,_,_),!,
-    objetivos_especificos(X,comportamiento_COVID).
+    estudio_epidemiologico(X),notificacion(Y).
 
