@@ -26,11 +26,13 @@ personal_medico(medico,de_primer_contacto).
 personal_medico(personal_epidemiologia,coordinacion_jurisdiccion_sanitaria).
 
 unidad_salud(cubiculo,aislado,ventilado,puerta_cerrada).
-unidad_salud_casa(casa,aislado,ventilado,puerta_cerrada).
+unidad_casa(casa,aislado,ventilado,puerta_cerrada).
 
 unidad_medica(publica).
 unidad_medica(privada).
 atencion_medica(primer_nivel).
+atencion_medica(segundo_nivel).
+atencion_medica(tercer_nivel).
 
 %Coordination jurisdiccion sanitaria
 estudio_epidemiologico(llenado_del_estudio).
@@ -49,10 +51,18 @@ usar_respirador(respirador_N95,tarjeta_azul).
 usar_contenedor(contenedor_rigido,desecho,contaminacion,tarjeta_roja).
 
 %Cuadro 2 Tarjeta Color Verde
-aislamiento_habitacion(individual,disponible).
+aislamiento_habitacion(habitacion_individual,disponible).
 aislamiento_transportar(paciente,proposito_indispensable,usar_mascarilla_tolera(mascarilla_quirurgica_desechable,tolera)).
 aislamiento_notificar(area,precauciones).
+aislamiento_personal(separacion,voluntaria).
 
+medida_mantener(distancia_1_metro).
+medida_mantener(puerta_cerrada).
+
+reportarse(visitante,central_enfermeras).
+
+hospitalizacion(no_requiere_hospitalizacion).
+hospitalizacion(requiere_hospitalizacion).
 
 cubrise(boca).
 cubrise(nariz).
@@ -80,13 +90,19 @@ contaminacion_de(contaminacion,ropa).
 desechos_de(agujas).
 desechos_de(material_punzocortante).
 
+numero_pacientes(unico).
+numero_pacientes(multiples).
+
+garantizar(insumos).
+
 %Cuadro 2 Tarjeta Color Azul
 aerosoles(procedimiento,[aspiraciones,intubaciones,broncoscopias,reanimacion_cardiopulmonar]).
 
 %//////////////////////////////////////////////////////Rules
 
 caso_sospechoso(E1,E2,E3,C1,C2,C3,P1,P2):-
-    enfermedad_covid(E1,E2,E3),contacto_covid(C1,C2,C3);pais_transmision_covid(P1,P2).
+    enfermedad_covid(E1,E2,E3),contacto_covid(C1,C2,C3);pais_transmision_covid(P1,P2),
+    estudio_epidemiologico(_).
 
 caso_confirmado(E1,E2,E3,C1,C2,C3,P1,P2,Y,Z) :-
     caso_sospechoso(E1,E2,E3,C1,C2,C3,P1,P2),!,diagnostico(Y,Z).
@@ -111,7 +127,7 @@ higiene_respiratoria(X,Y) :-
 
 % 2 Step for medias_preventivas without synthoms
 jurisdiccion_sanitaria(X,Y,Z,W) :-
-    atencion_medica(X),
+    atencion_medica(X),X == primer_nivel,
     estudio_epidemiologico(Y),
     institucion_epidemiologica(Z),
     sintomas_covid(sintoma,ninguno),
@@ -119,7 +135,7 @@ jurisdiccion_sanitaria(X,Y,Z,W) :-
 
 % 3 Step for medias_preventivas for breath synthoms
 jurisdiccion_sanitaria_sintomas(X,Y,Z,T1,T2,T3) :-
-    atencion_medica(X),
+    atencion_medica(X),X== primer_nivel,
     estudio_epidemiologico(Y),
     institucion_epidemiologica(Z),
     sintomas_covid(sintoma,respiratorio),
@@ -161,21 +177,22 @@ contenedor(X,Y,Z) :-
     usar_contenedor(Y,Z,_,_),
     desechos_de(X).
 
-
 precauciones_aerosol(X,K,Y) :-
     (usar_respirador(X,_),
     aerosoles(K,Y));
     (write('caso confirmado'),usar_respirador(X,_),
     aerosoles(K,Y),caso_confirmado(_,_,_,_,_,_,_,_,_,_)).
 
-% precauciones_estandar(Y) :-
-%     higiene_manos(_,_,_,_),
-%     guantes(_,Y).
 
 % 4 Step for gota y contacto
 personal_primer_contacto() :-
     unidad_medica(publica),unidad_medica(privada),
     caso_sospechoso(_,_,_,_,_,_,_,_).
+
+% 5 Step
+caso_detectado(X,Y,Z) :-
+    atencion_medica(X),X \= primer_nivel,
+    personal_medico(Y,Z),Z == coordinacion_jurisdiccion_sanitaria.
 
 
 %TODO with rules above
@@ -193,5 +210,34 @@ aislamiento(X,W,K) :-
     (write('restriccion'),movimiento_personas(X,_),X == restriccion,enfermedad_covid(W,K,_)).
 
 caso_aislamiento(X,W,K,C) :-
-    (write('separacion'),movimiento_personas(X,_),X == separacion,enfermedad_covid(W,K,_),unidad_salud_casa(C,_,_,_));
-    (write('restriccion'),movimiento_personas(X,_),X == restriccion,enfermedad_covid(W,K,_),unidad_salud_casa(C,_,_,_)).
+    (write('separacion'),movimiento_personas(X,_),X == separacion,enfermedad_covid(W,K,_),unidad_casa(C,_,_,_));
+    (write('restriccion'),movimiento_personas(X,_),X == restriccion,enfermedad_covid(W,K,_),unidad_salud(C,_,_,_)).
+
+aislamiento_casa_habitacion(X,W,K,H) :-
+    enfermedad_covid(W,K,_),hospitalizacion(X),X == no_requiere_hospitalizacion,aislamiento_habitacion(H,_).
+
+aislamiento_casa(X,W,K,P,R,T) :-
+    enfermedad_covid(W,K,_),hospitalizacion(X),X == no_requiere_hospitalizacion,higiene_manos(R,T,_,_),!,
+    higiene_respiratoria(_,_),!,usar_mascarilla_tolera(P,tolera).
+
+aislamiento_voluntario(X,W,K,C,T) :-
+    (write('separacion'),movimiento_personas(X,_),X == separacion,aislamiento_personal(_,T),enfermedad_covid(W,K,_),unidad_casa(C,_,_,_));
+    (write('restriccion'),movimiento_personas(X,_),X == restriccion,aislamiento_personal(_,T),enfermedad_covid(W,K,_),unidad_salud(C,_,_,_)).
+
+%Step 6
+paciente_aislado(W,K,C,R,T,F) :-
+    enfermedad_covid(W,K,_),unidad_salud(C,_,_,_),aislamiento_habitacion(R,_),numero_pacientes(T),T == unico,garantizar(F).
+
+multiples_pacientes_aislados(W,K,C,R,T,F) :-
+    enfermedad_covid(W,K,_),unidad_salud(C,_,_,_),aislamiento_habitacion(R,_),numero_pacientes(T),T == multiples,
+    medida_mantener(F),F == distancia_1_metro.
+
+%Step 7
+caso_identificado(X,Y,Z) :-
+    institucion_epidemiologica(Z), personal_medico(X,Y).
+
+%Step 9
+caso_corroborado_sospechoso(X) :-
+    caso_sospechoso(_,_,_,_,_,_,_,_),!,
+    objetivos_especificos(X,comportamiento_COVID).
+
